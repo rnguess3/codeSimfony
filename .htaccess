@@ -1,0 +1,5 @@
+RewriteEngine on
+RewriteBase /umbono
+
+RewriteCond %{REQUEST_URI} !^/umbono/public/
+RewriteRule ^(.*)$ /umbono/public/index.php [L]

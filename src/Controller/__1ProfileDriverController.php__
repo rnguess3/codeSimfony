@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Controller;
+
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
+
+class ProfileDriverController extends AbstractController
+{
+
+    /**
+     * @Route("/my_taxi_course", name="my_taxi_course")
+     */
+    public function my_taxi_course()
+    {
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('SELECT * FROM cmde_taxi_client cmd 
+                                                LEFT JOIN clients c on cmd.id_client = c.id_client 
+                                                WHERE cmd.id_conducteur = ? AND cmd.id_type_course = 1 AND (cmd.traitement_cmde = 0 AND cmd.heur_depart > NOW());');
+        $var->execute([$user_id]);
+        $res = $var->fetchAll();
+
+        return new JsonResponse($res);
+    }
+
+    /**
+     * @Route("/my_taxi_course_finished", name="my_taxi_course_finished")
+     */
+    public function my_taxi_course_finished()
+    {
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('SELECT * FROM cmde_taxi_client cmd 
+                                                LEFT JOIN clients c on cmd.id_client = c.id_client 
+                                                WHERE cmd.id_conducteur = ? AND cmd.id_type_course = 1 AND (cmd.traitement_cmde = 1 OR cmd.heur_depart < NOW());');
+        $var->execute([$user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+
+    /**
+     * @Route("/my_taxi_validation", name="my_taxi_validation")
+     */
+    public function my_taxi_valid()
+    {
+        $id_cmd=$_GET["id_cmd"];
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('CALL __taxi_validation_cmde_conducteur(?, ?);');
+        $var->execute([$id_cmd, $user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+
+    /**
+     * @Route("/my_taxishared_course", name="my_taxishared_course")
+     */
+    public function my_taxishared_course()
+    {
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('SELECT * FROM cmde_taxi_client cmd 
+                                                LEFT JOIN clients c on cmd.id_client = c.id_client 
+                                            WHERE cmd.id_conducteur = ? AND cmd.id_type_course = 2 AND (cmd.traitement_cmde = 0 AND cmd.heur_depart > NOW());');
+        $var->execute([$user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+    /**
+     * @Route("/my_taxishared_course_finished", name="my_taxishared_course_finished")
+     */
+    public function my_taxishared_course_finished()
+    {
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('SELECT * FROM cmde_taxi_client cmd 
+                                                LEFT JOIN clients c on cmd.id_client = c.id_client 
+                                            WHERE cmd.id_conducteur = ? AND cmd.id_type_course = 2 AND (cmd.traitement_cmde = 1 OR cmd.heur_depart < NOW());');
+        $var->execute([$user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+    /**
+     * @Route("/my_taxishared_validation", name="my_taxishared_validation")
+     */
+    public function my_taxishared_valid()
+    {
+        $id_cmd=$_GET["id_cmd"];
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('CALL __taxi_validation_cmde_conducteur(?, ?);');
+        $var->execute([$id_cmd, $user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+
+    /**
+     * @Route("/my_carpooling_course", name="my_carpooling_course")
+     */
+    public function my_carpooling_course()
+    {
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('
+SELECT * FROM proposition_trajet_conducteur ptc
+ LEFT JOIN cmde c on ptc.id_proposition = c.id_proposition
+WHERE ptc.id_conducteur = ? AND c.traitement_cmde = 0;');
+        $var->execute([$user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+    /**
+     * @Route("/my_carpooling_course_finished", name="my_carpooling_course_finished")
+     */
+    public function my_carpooling_course_finished()
+    {
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('
+SELECT * FROM proposition_trajet_conducteur ptc
+ LEFT JOIN cmde c on ptc.id_proposition = c.id_proposition
+WHERE ptc.id_conducteur = ? AND (c.traitement_cmde = 1 OR ptc.HD < NOW());');
+        $var->execute([$user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+    /**
+     * @Route("/my_carpooling_validation", name="my_carpooling_validation")
+     */
+    public function my_carpooling_validation()
+    {
+        $id_cmd=$_GET["id_cmd"];
+        $user_id=$_GET["user_id"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('CALL __coovoiturage_validation_conducteur(?, ?);');
+        $var->execute([$id_cmd, $user_id]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+
+    /**
+     * @Route("/profile_position_update", name="profile_position_update")
+     */
+    public function profile_position_update(Request $request)
+    {
+        $post = json_decode($request->getContent(),true);
+        $driver_id = $post["driver_id"];
+        $longitude = $post["longitude"];
+        $latitude = $post["latitude"];
+        $em = $this->getDoctrine();
+        $var = $em->getConnection()->prepare('CALL 	__taxi_update_position(?, ?, ?)');
+        $var->execute([$driver_id, $longitude, $latitude]);
+        $res = $var->fetchAll();
+        return new JsonResponse($res);
+    }
+
+
+}

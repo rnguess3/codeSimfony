@@ -1,0 +1,13 @@
+api_platform:
+    resource: .
+    type: api_platform
+    prefix: /umbono/api
+
+#api_product_slug:
+#    path: '/api/products/by-slug/{slug}'
+#    methods:  ['GET']
+#    defaults:
+#        _controller: App\Controller\ProductController:productsGetBySlugAction
+#        _api_resource_class: 'App\Entity\Product'
+#        _api_collection_operation_name: 'product_slug'
+
